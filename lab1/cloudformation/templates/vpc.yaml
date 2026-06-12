@@ -16,10 +16,10 @@ Parameters:
     Default: 10.0.2.0/24
   AZPublic:
     Type: String
-    Default: ap-southeast-1a
+    Default: us-east-1a
   AZPrivate:
     Type: String
-    Default: ap-southeast-1b
+    Default: us-east-1b
 
 Resources:
   VPC:
