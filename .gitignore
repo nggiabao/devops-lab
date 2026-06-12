@@ -43,9 +43,7 @@ terraform.rc
 # Uncomment the line below if you want to ignore planout files.
 # planout
 
-# ==========================================
 # AWS CLI & Credentials (If kept in-project)
-# ==========================================
 # Local credential dumps, environmental files, or backups
 .aws/
 credentials
@@ -56,15 +54,11 @@ credentials.csv
 id_rsa
 id_rsa.pub
 
-# ==========================================
 # AWS SAM CLI (Serverless Application Model)
-# ==========================================
 # Build and deployment artifacts
 .aws-sam/
 
-# ==========================================
-# AWS Amplify CLI
-# ==========================================
+# AWS Amplify CLI   
 # Contains local provider secrets and environment configurations
 amplify/.config/
 amplify/**/*-parameters.json
@@ -73,10 +67,11 @@ amplify/**/aws-exports.js
 amplify/**/awsconfiguration.json
 team-provider-info.json
 
-# ==========================================
 # AWS Cloud Development Kit (CDK)
-# ==========================================
 # Synthesized CloudFormation templates and context files
 cdk.out/
 .cdk.staging/
 cdk.context.json
+
+# IP of Local PC
+ip_address.text
