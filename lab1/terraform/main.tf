@@ -11,7 +11,7 @@ provider "aws" {
   region = var.region
 }
 
-# Tự động lấy AMI Amazon Linux 2023 mới nhất
+# Tu dong lay AMI Amazon Linux 2023 moi nhat
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
@@ -44,7 +44,7 @@ module "nat_gateway" {
   project_name     = var.project_name
   public_subnet_id = module.vpc.public_subnet_id
 
-  # Đảm bảo IGW được tạo trước NAT GW
+  # Dam bao IGW duoc tao truoc NAT GW
   depends_on = [module.vpc]
 }
 

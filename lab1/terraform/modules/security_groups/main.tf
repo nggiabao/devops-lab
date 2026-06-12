@@ -1,11 +1,11 @@
 # Security Group cho Public EC2
 resource "aws_security_group" "public_ec2" {
-  name        = "${var.project_name}-public-ec2-sg"
-  description = "Chỉ cho phép SSH từ IP cụ thể"
+  name        = "${var.project_name}-public-ec2"
+  description = "Chi cho phep SSH tu IP cu the"
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "SSH từ IP được phép"
+    description = "SSH tu IP duoc phep"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -13,7 +13,7 @@ resource "aws_security_group" "public_ec2" {
   }
 
   egress {
-    description = "Cho phép tất cả outbound"
+    description = "Cho phep tat ca outbound"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -21,19 +21,19 @@ resource "aws_security_group" "public_ec2" {
   }
 
   tags = {
-    Name    = "${var.project_name}-public-ec2-sg"
+    Name    = "${var.project_name}-public-ec2"
     Project = var.project_name
   }
 }
 
 # Security Group cho Private EC2
 resource "aws_security_group" "private_ec2" {
-  name        = "${var.project_name}-private-ec2-sg"
-  description = "Chỉ cho phép SSH từ Public EC2"
+  name        = "${var.project_name}-private-ec2"
+  description = "Chi cho phep SSH tu Public EC2"
   vpc_id      = var.vpc_id
 
   ingress {
-    description     = "SSH từ Public EC2"
+    description     = "SSH tu Public EC2"
     from_port       = 22
     to_port         = 22
     protocol        = "tcp"
@@ -41,7 +41,7 @@ resource "aws_security_group" "private_ec2" {
   }
 
   egress {
-    description = "Cho phép tất cả outbound"
+    description = "Cho phep tat ca outbound"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -49,7 +49,7 @@ resource "aws_security_group" "private_ec2" {
   }
 
   tags = {
-    Name    = "${var.project_name}-private-ec2-sg"
+    Name    = "${var.project_name}-private-ec2"
     Project = var.project_name
   }
 }

@@ -16,16 +16,16 @@ output "internet_gateway_id" {
 }
 
 output "nat_gateway_eip" {
-  description = "Elastic IP của NAT Gateway"
+  description = "Elastic IP cua NAT Gateway"
   value       = module.nat_gateway.eip_public_ip
 }
 
 output "public_ec2_public_ip" {
-  description = "Public IP của EC2 ở Public Subnet – dùng để SSH"
+  description = "Public IP cua EC2 o Public Subnet – dung de SSH"
   value       = module.ec2.public_ec2_public_ip
 }
 
 output "private_ec2_private_ip" {
-  description = "Private IP của EC2 ở Private Subnet"
+  description = "Private IP cua EC2 o Private Subnet"
   value       = module.ec2.private_ec2_private_ip
 }

@@ -5,30 +5,30 @@ variable "project_name" {
 
 variable "region" {
   type    = string
-  default = "ap-southeast-1"
+  default = "us-east-1"
 }
 
-variable "vpc_cidr"            { 
-    type = string
-    default = "10.0.0.0/16" 
+variable "vpc_cidr" {
+  type    = string
+  default = "10.0.0.0/16"
 }
-variable "public_subnet_cidr"  { 
-    type = string 
-    default = "10.0.1.0/24" 
+variable "public_subnet_cidr" {
+  type    = string
+  default = "10.0.1.0/24"
 }
 variable "private_subnet_cidr" {
-    type = string 
-    default = "10.0.2.0/24"
+  type    = string
+  default = "10.0.2.0/24"
 }
 
 variable "availability_zone_public" {
   type    = string
-  default = "ap-southeast-1a"
+  default = "us-east-1a"
 }
 
 variable "availability_zone_private" {
   type    = string
-  default = "ap-southeast-1b"
+  default = "us-east-1b"
 }
 
 variable "instance_type" {
@@ -38,10 +38,10 @@ variable "instance_type" {
 
 variable "key_name" {
   type        = string
-  description = "Tên EC2 Key Pair đã tạo trên AWS"
+  description = "Ten EC2 Key Pair da tao tren AWS"
 }
 
 variable "allowed_ssh_cidr" {
   type        = string
-  description = "IP public của bạn dạng CIDR (ví dụ: 123.45.67.89/32)"
+  description = "IP public cua ban dang CIDR (vi du: 123.45.67.89/32)"
 }

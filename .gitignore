@@ -52,6 +52,9 @@ credentials
 credentials.csv
 *.pem
 *.pkcs12
+*.key
+id_rsa
+id_rsa.pub
 
 # ==========================================
 # AWS SAM CLI (Serverless Application Model)
