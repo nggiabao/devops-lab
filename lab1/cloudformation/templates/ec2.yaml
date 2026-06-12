@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'NT548-Lab01 - EC2 Instances Module'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: nt548-lab01
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t2.micro, t3.micro, t3.small]
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Tên EC2 Key Pair
+  # Tự động lấy AMI Amazon Linux 2023 mới nhất qua SSM
+  AmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64'
+
+Resources:
+  PublicEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      SubnetId:
+        Fn::ImportValue: !Sub '${ProjectName}-PublicSubnetId'
+      SecurityGroupIds:
+        - Fn::ImportValue: !Sub '${ProjectName}-PublicEC2SgId'
+      KeyName: !Ref KeyName
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-public-ec2'
+        - Key: Type
+          Value: Public
+        - Key: Project
+          Value: !Ref ProjectName
+
+  PrivateEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      SubnetId:
+        Fn::ImportValue: !Sub '${ProjectName}-PrivateSubnetId'
+      SecurityGroupIds:
+        - Fn::ImportValue: !Sub '${ProjectName}-PrivateEC2SgId'
+      KeyName: !Ref KeyName
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-private-ec2'
+        - Key: Type
+          Value: Private
+        - Key: Project
+          Value: !Ref ProjectName
+
+Outputs:
+  PublicEC2Id:
+    Value: !Ref PublicEC2
+  PublicEC2PublicIP:
+    Value: !GetAtt PublicEC2.PublicIp
+    Description: Public IP of EC2 to SSH
+  PrivateEC2Id:
+    Value: !Ref PrivateEC2
+  PrivateEC2PrivateIP:
+    Value: !GetAtt PrivateEC2.PrivateIp
