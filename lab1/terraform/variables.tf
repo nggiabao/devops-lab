@@ -1,0 +1,47 @@
+variable "project_name" {
+  type    = string
+  default = "nt548-lab01"
+}
+
+variable "region" {
+  type    = string
+  default = "ap-southeast-1"
+}
+
+variable "vpc_cidr"            { 
+    type = string
+    default = "10.0.0.0/16" 
+}
+variable "public_subnet_cidr"  { 
+    type = string 
+    default = "10.0.1.0/24" 
+}
+variable "private_subnet_cidr" {
+    type = string 
+    default = "10.0.2.0/24"
+}
+
+variable "availability_zone_public" {
+  type    = string
+  default = "ap-southeast-1a"
+}
+
+variable "availability_zone_private" {
+  type    = string
+  default = "ap-southeast-1b"
+}
+
+variable "instance_type" {
+  type    = string
+  default = "t2.micro"
+}
+
+variable "key_name" {
+  type        = string
+  description = "Tên EC2 Key Pair đã tạo trên AWS"
+}
+
+variable "allowed_ssh_cidr" {
+  type        = string
+  description = "IP public của bạn dạng CIDR (ví dụ: 123.45.67.89/32)"
+}
