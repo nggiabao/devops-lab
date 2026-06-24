@@ -5,13 +5,20 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  backend "s3" {
+    bucket         = "nt548-tfstate-ACCOUNT_ID"   # ← thay Account ID
+    key            = "lab01/terraform.tfstate"
+    region         = "ap-southeast-1"
+    dynamodb_table = "nt548-terraform-lock"
+    encrypt        = true
+  }
 }
 
 provider "aws" {
   region = var.region
 }
 
-# Tu dong lay AMI Amazon Linux 2023 moi nhat
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]

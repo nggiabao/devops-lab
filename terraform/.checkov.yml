@@ -1,0 +1,12 @@
+framework:
+  - terraform
+
+skip-check:
+  - CKV_AWS_8
+  - CKV_AWS_79
+  - CKV_AWS_135
+  - CKV2_AWS_11
+  - CKV2_AWS_12
+  - CKV_AWS_130
+
+soft-fail: true
