@@ -1,6 +1,5 @@
 variable "project_name" {
-  type        = string
-  description = "Prefix dat ten cho tai nguyen"
+  type = string
 }
 
 variable "vpc_cidr" {

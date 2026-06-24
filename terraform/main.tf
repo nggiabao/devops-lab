@@ -7,9 +7,9 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "nt548-tfstate-ACCOUNT_ID"   # ← thay Account ID
-    key            = "lab01/terraform.tfstate"
-    region         = "ap-southeast-1"
+    bucket         = "nt548-tfstate-736829434135"
+    key            = "terraform.tfstate"
+    region         = "us-east-1"
     dynamodb_table = "nt548-terraform-lock"
     encrypt        = true
   }

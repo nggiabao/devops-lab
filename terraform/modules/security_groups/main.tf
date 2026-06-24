@@ -12,6 +12,14 @@ resource "aws_security_group" "public_ec2" {
     cidr_blocks = [var.allowed_ssh_cidr]
   }
 
+  ingress {
+    description = "Jenkins UI"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_ssh_cidr]
+  }
+
   egress {
     description = "Cho phep tat ca outbound"
     from_port   = 0
@@ -36,6 +44,22 @@ resource "aws_security_group" "private_ec2" {
     description     = "SSH tu Public EC2"
     from_port       = 22
     to_port         = 22
+    protocol        = "tcp"
+    security_groups = [aws_security_group.public_ec2.id]
+  }
+
+  ingress {
+    description     = "App ports từ Jenkins (Public EC2)"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.public_ec2.id]
+  }
+
+  ingress {
+    description     = "Backend API từ Jenkins (Public EC2)"
+    from_port       = 5000
+    to_port         = 5000
     protocol        = "tcp"
     security_groups = [aws_security_group.public_ec2.id]
   }
