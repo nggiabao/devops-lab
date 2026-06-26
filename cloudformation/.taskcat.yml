@@ -1,0 +1,18 @@
+project:
+  name: nt548-lab02
+  regions:
+    - us-east-1
+  cleanup_failed: true
+
+tests:
+  test-vpc:
+    template: templates/vpc.yaml
+    parameters:
+      ProjectName: nt548-taskcat-$RANDOM
+      VpcCidr: 10.1.0.0/16
+      PublicSubnetCidr: 10.1.1.0/24
+      PrivateSubnetCidr: 10.1.2.0/24
+      AZPublic: us-east-1a
+      AZPrivate: us-east-1b
+    regions:
+      - us-east-1

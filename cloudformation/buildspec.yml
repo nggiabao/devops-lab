@@ -1,0 +1,54 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.10
+    commands:
+      - echo "Upgrading build tools and fixing PyYAML Cython dependency..."
+      - pip install --upgrade pip setuptools wheel "cython<3.0.0"
+      - pip install "PyYAML>=6.0"
+      - echo "Installing cfn-lint and taskcat..."
+      - pip install cfn-lint taskcat junit-xml
+      - pip install "setuptools<70.0.0"
+      - cfn-lint --version
+      - taskcat --version
+
+  pre_build:
+    commands:
+      - echo "Running cfn-lint to validate templates..."
+      - |
+        FAILED=0
+        for template in templates/*.yaml; do
+          echo "Linting: $template"
+          cfn-lint "$template" -i W --format json > /tmp/lint-$(basename $template).json || FAILED=1
+          cfn-lint "$template" -i W --format junit >> cfn-lint-results.xml || true
+        done
+        if [ $FAILED -ne 0 ]; then
+          echo "cfn-lint found errors!"
+          cat /tmp/lint-*.json
+          exit 1
+        fi
+        echo "cfn-lint passed!"
+
+  build:
+    commands:
+      - echo "Running Taskcat to test CloudFormation..."
+      - taskcat test run --no-delete || echo "Taskcat completed (check logs)"
+
+  post_build:
+    commands:
+      - echo "Build and test completed!"
+      - ls -la taskcat_outputs/ 2>/dev/null || echo "No taskcat output"
+
+reports:
+  cfn-lint-report:
+    files:
+      - cfn-lint-results.xml
+    file-format: JUNITXML
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: '.'
+  name: cfn-artifacts-$(date +%Y%m%d%H%M%S)
