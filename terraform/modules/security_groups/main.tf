@@ -49,7 +49,7 @@ resource "aws_security_group" "private_ec2" {
   }
 
   ingress {
-    description     = "App ports từ Jenkins (Public EC2)"
+    description     = "App ports tu Jenkins (Public EC2)"
     from_port       = 80
     to_port         = 80
     protocol        = "tcp"
@@ -57,7 +57,7 @@ resource "aws_security_group" "private_ec2" {
   }
 
   ingress {
-    description     = "Backend API từ Jenkins (Public EC2)"
+    description     = "Backend API tu Jenkins (Public EC2)"
     from_port       = 5000
     to_port         = 5000
     protocol        = "tcp"
