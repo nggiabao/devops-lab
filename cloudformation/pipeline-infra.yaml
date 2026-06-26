@@ -1,0 +1,236 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'NT548-Lab02 - Automate CodePipeline for CloudFormation (Part 2)'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: nt548-lab01
+  RepositoryName:
+    Type: String
+    Default: nt548-lab02-cfn
+  BranchName:
+    Type: String
+    Default: main
+  AllowedSshCidr:
+    Type: String
+    Description: Your IP in CIDR format (e.g. 1.2.3.4/32)
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: nt548-keypair
+
+Resources:
+
+  # S3 bucket to store Pipeline artifacts
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'nt548-codepipeline-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+
+  # CodeCommit Repository (created here, no separate CLI needed)
+  CodeRepo:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: !Ref RepositoryName
+      RepositoryDescription: 'NT548 Lab02 - CloudFormation templates'
+
+  # IAM Role for CodePipeline
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-CodePipelineRole'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: codepipeline.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess
+        - arn:aws:iam::aws:policy/AWSCodeCommitFullAccess
+        - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+        - arn:aws:iam::aws:policy/IAMFullAccess   # needed to PassRole for CFNDeployRole
+
+  # IAM Role for CodeBuild
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-CodeBuildRole'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: codebuild.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+        # (In production permissions should be restricted, for lab keep Admin for simplicity)
+
+  # IAM Role for CloudFormation Deploy actions in Pipeline
+  CloudFormationDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-CFNDeployRole'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: cloudformation.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  # CodeBuild Project (runs cfn-lint + taskcat)
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub '${ProjectName}-cfn-build'
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec.yml
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:7.0
+
+  # CodePipeline: Source → Build → 5 Deploy actions
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub '${ProjectName}-cfn-pipeline'
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId: { Category: Source, Owner: AWS, Provider: CodeCommit, Version: '1' }
+              Configuration:
+                RepositoryName: !GetAtt CodeRepo.Name
+                BranchName: !Ref BranchName
+                PollForSourceChanges: false
+              OutputArtifacts: [ { Name: SourceOutput } ]
+
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId: { Category: Build, Owner: AWS, Provider: CodeBuild, Version: '1' }
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts: [ { Name: SourceOutput } ]
+              OutputArtifacts: [ { Name: BuildOutput } ]
+
+        - Name: Deploy
+          Actions:
+            - Name: Deploy-VPC
+              RunOrder: 1
+              ActionTypeId: { Category: Deploy, Owner: AWS, Provider: CloudFormation, Version: '1' }
+              InputArtifacts: [ { Name: BuildOutput } ]
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                StackName: !Sub '${ProjectName}-vpc'
+                TemplatePath: BuildOutput::templates/vpc.yaml
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                ParameterOverrides: !Sub '{"ProjectName":"${ProjectName}"}'
+
+            - Name: Deploy-NAT
+              RunOrder: 2
+              ActionTypeId: { Category: Deploy, Owner: AWS, Provider: CloudFormation, Version: '1' }
+              InputArtifacts: [ { Name: BuildOutput } ]
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                StackName: !Sub '${ProjectName}-nat'
+                TemplatePath: BuildOutput::templates/nat_gateway.yaml
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                ParameterOverrides: !Sub '{"ProjectName":"${ProjectName}"}'
+
+            - Name: Deploy-Routes
+              RunOrder: 3
+              ActionTypeId: { Category: Deploy, Owner: AWS, Provider: CloudFormation, Version: '1' }
+              InputArtifacts: [ { Name: BuildOutput } ]
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                StackName: !Sub '${ProjectName}-routes'
+                TemplatePath: BuildOutput::templates/route_tables.yaml
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                ParameterOverrides: !Sub '{"ProjectName":"${ProjectName}"}'
+
+            - Name: Deploy-SG
+              RunOrder: 4
+              ActionTypeId: { Category: Deploy, Owner: AWS, Provider: CloudFormation, Version: '1' }
+              InputArtifacts: [ { Name: BuildOutput } ]
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                StackName: !Sub '${ProjectName}-sg'
+                TemplatePath: BuildOutput::templates/security_groups.yaml
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                ParameterOverrides: !Sub '{"ProjectName":"${ProjectName}","AllowedSshCidr":"${AllowedSshCidr}"}'
+
+            - Name: Deploy-EC2
+              RunOrder: 5
+              ActionTypeId: { Category: Deploy, Owner: AWS, Provider: CloudFormation, Version: '1' }
+              InputArtifacts: [ { Name: BuildOutput } ]
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                StackName: !Sub '${ProjectName}-ec2'
+                TemplatePath: BuildOutput::templates/ec2.yaml
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                ParameterOverrides: !Sub '{"ProjectName":"${ProjectName}","KeyName":"${KeyName}"}'
+
+  # EventBridge Rule: auto trigger Pipeline on new commit (like GitHub webhook)
+  EventRuleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: events.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: StartPipelineExecution
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: codepipeline:StartPipelineExecution
+                Resource: !Sub 'arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${Pipeline}'
+
+  CodeCommitEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${ProjectName}-codecommit-trigger'
+      EventPattern:
+        source: [aws.codecommit]
+        detail-type: ['CodeCommit Repository State Change']
+        resources: [ !GetAtt CodeRepo.Arn ]
+        detail:
+          event: [referenceCreated, referenceUpdated]
+          referenceType: [branch]
+          referenceName: [ !Ref BranchName ]
+      Targets:
+        - Arn: !Sub 'arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${Pipeline}'
+          RoleArn: !GetAtt EventRuleRole.Arn
+          Id: CodePipelineTarget
+
+Outputs:
+  PipelineName:
+    Value: !Ref Pipeline
+  RepositoryCloneUrlHttp:
+    Description: 'Use with git-remote-codecommit or HTTPS Git credentials'
+    Value: !GetAtt CodeRepo.CloneUrlHttp
+  ArtifactBucketName:
+    Value: !Ref ArtifactBucket

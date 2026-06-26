@@ -1,0 +1,13 @@
+# cfn-lint configuration for NT548-Lab02
+include_checks:
+  - I  # Informational checks
+
+ignore_checks:
+  - W3002  # Allow relative paths in template URLs
+  - E3030  # Allow relative paths in template URLs
+
+regions:
+  - us-east-1
+
+templates:
+  - templates/*.yaml
